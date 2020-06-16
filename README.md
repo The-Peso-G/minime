@@ -1,58 +1,71 @@
-# MiniMeToken
+![MiniMe Token](readme-header.png)
 
-A MiniMeToken is a standard ERC20 token with some extra functionality:
+[![Build Status](https://travis-ci.org/Giveth/minime.svg?branch=master)](https://travis-ci.org/Giveth/minime)
 
-### The token is clonable
+The MiniMeToken contract is a standard ERC20 token with extra functionality:
 
-Any body can create a new token with an initial distribution of cloned tokens identical to the original token. At some specific block.
+### The token is easy to clone!
 
-To create a child token, the next function is defined:
+Anybody can create a new clone token from any token using this contract with an initial distribution identical to the original token at a specified block. The address calling the `createCloneToken` function will become the token controller and the token's default settings can be specified in the function call.
 
-     function createChildToken(
-            string _childTokenName,
-            uint8 _childDecimalUnits,
-            string _childTokenSymbol
-            uint _snapshotBlock,            // if block is not already mined, it will teke the current block
-            bool _isConstant
-        ) returns(address)
+    function createCloneToken(
+        string _cloneTokenName,
+        uint8 _cloneDecimalUnits,
+        string _cloneTokenSymbol,
+        uint _snapshotBlock,
+        bool _isConstant
+        ) returns(address) {
 
-Once the child token is created, it acts as a completely independent token.
+Once the clone token is created, it acts as a completely independent token, with it's own unique functionalities.
 
-### Balances history is registered and available
+### Balance history is registered and available to be queried
 
-The contract maintains a history of all the distribution changes of the token. Two calls are introduced to know the totalSupply and the balance of any address at any block in the past.
+All MiniMe Tokens maintain a history of the balance changes that occur during each block. Two calls are introduced to read the totalSupply and the balance of any address at any block in the past.
 
     function totalSupplyAt(uint _blockNumber) constant returns(uint)
 
     function balanceOfAt(address _holder, uint _blockNumber) constant returns (uint)
 
-### Optional token owner
+### Optional token controller
 
-The owner of the contract can generate/destroy/transfer tokens at its own discretion. Of course, the owner can be a regular account, another contract that rules the contract or just the address 0x0 if this functionality is not wanted.
+The controller of the contract can generate/destroy/transfer tokens at its own discretion. The controller can be a regular account, but the intention is for the controller to be another contract that imposes transparent rules on the token's issuance and functionality. The Token Controller is not required for the MiniMe token to function, if there is no reason to generate/destroy/transfer tokens, the token controller can be set to 0x0 and this functionality will be disabled.
 
-As an example, a Token Creation contract can be the owner of the Token Contract and at the end of the token creation period, the ownership can be transfered to the 0x0 address.
+For example, a Token Creation contract can be set as the controller of the MiniMe Token and at the end of the token creation period, the controller can be transferred to the 0x0 address, to guarantee that no new tokens will be created.
 
-To create and destroy tokens, this two functions are introduced:
+To create and destroy tokens, these two functions are introduced:
 
-    function generateTokens(address _holder, uint _value) onlyOwner
+    function generateTokens(address _holder, uint _value) onlyController
 
-    function destroyTokens(address _holder, uint _value) onlyOwner
+    function destroyTokens(address _holder, uint _value) onlyController
 
-### Owner of the token can freeze the transfers.
+### The Token's Controller can freeze transfers.
 
-Tokens can be created with the constant flag set on, and the owner can also toggle this flag. When a token is flagged with this flag, no transfers, generations and destroys are allowed.
+If transfersEnabled == false, tokens cannot be transferred by the users, however they can still be created, destroyed, and transferred by the controller. The controller can also toggle this flag.
 
-    function setConstant(bool _isConstant) onlyOwner
+    // Allows tokens to be transferred if true or frozen if false
+    function enableTransfers(bool _transfersEnabled) onlyController
 
 
 ## Applications
 
-Some of the applications that child tokens can be used for are:
+If this token contract is used as the base token, then clones of itself can be easily generated at any given block number, this allows for incredibly powerful functionality, effectively the ability for anyone to give extra features to the token holders without having to migrate to a new contract. Some of the applications that the MiniMe token contract can be used for are:
 
-1. a ballot that is burned when you vote.
-2. a discount ticked that is redeemed when you use it.
-3. a token of a "spinoff" DAO.
-4. a token that can be used to give explicit support to an action or a campaign.
-5. lots of other applications.
+1. Generating a voting token that is burned when you vote.
+2. Generating a discount "coupon" that is redeemed when you use it.
+3. Generating a token for a "spinoff" DAO.
+4. Generating a token that can be used to give explicit support to an action or a campaign, like polling.
+5. Generating a token to enable the token holders to collect daily, monthly or yearly payments.
+6. Generating a token to limit participation in a token sale or similar event to holders of a specific token.
+7. Generating token that allows a central party complete control to transfer/generate/destroy tokens at will.
+8. Lots of other applications including all the applications the standard ERC 20 token can be used for.
 
-And all that maintaining always the original token.
+All these applications and more are enabled by the MiniMe Token Contract. The most amazing part being that anyone that wants to add these features can, in a permissionless yet safe manner without affecting the parent token's intended functionality.
+
+# How to deploy a campaign
+
+1. Deploy the MinimeTokenFactory
+2. Deploy the MinimeToken
+3. Deploy the campaign
+4. Assign the controller of the MinimeToken to the campaign.
+
+
